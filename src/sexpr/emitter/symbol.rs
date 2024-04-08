@@ -4,8 +4,15 @@ use quote::quote;
 
 use crate::sexpr::{emitter::helper, error::Error, parser::Rule};
 
+/// Emit a symbol value.
+#[allow(
+    clippy::single_call_fn,
+    clippy::expect_used,
+    clippy::unreachable,
+    clippy::wildcard_enum_match_arm
+)]
 pub fn emit_symbol<'a>(
-    mutator: syn::Ident,
+    mutator: &syn::Ident,
     pair: Pair<'a, Rule>,
     out: &mut TokenStream,
 ) -> Result<(), Error<'a>> {
@@ -26,7 +33,7 @@ pub fn emit_symbol<'a>(
                 match pair.as_rule() {
                     Rule::symbol_text => symbol.push_str(pair.as_str()),
                     Rule::symbol_escape => {
-                        symbol.push(helper::get_escape(pair)?.expect("escaped character"))
+                        symbol.push(helper::get_escape(pair)?.expect("escaped character"));
                     }
                     _ => unreachable!(),
                 }
@@ -41,6 +48,7 @@ pub fn emit_symbol<'a>(
     }
 }
 
+#[allow(clippy::unwrap_used, clippy::panic)]
 #[cfg(test)]
 mod tests {
     use pest::Parser;
@@ -54,47 +62,41 @@ mod tests {
     #[test]
     fn emit_symbol_success() {
         let exprs = [
-            (r#"hello"#, quote! { Value::new_symbol(m.clone(), "hello") }),
-            (r#"..."#, quote! { Value::new_symbol(m.clone(), "...") }),
-            (r#"+"#, quote! { Value::new_symbol(m.clone(), "+") }),
+            ("hello", quote! { Value::new_symbol(m.clone(), "hello") }),
+            ("...", quote! { Value::new_symbol(m.clone(), "...") }),
+            ("+", quote! { Value::new_symbol(m.clone(), "+") }),
+            ("+soup+", quote! { Value::new_symbol(m.clone(), "+soup+") }),
+            ("<=?", quote! { Value::new_symbol(m.clone(), "<=?") }),
             (
-                r#"+soup+"#,
-                quote! { Value::new_symbol(m.clone(), "+soup+") },
-            ),
-            (r#"<=?"#, quote! { Value::new_symbol(m.clone(), "<=?") }),
-            (
-                r#"->string"#,
+                "->string",
                 quote! { Value::new_symbol(m.clone(), "->string") },
             ),
             (
-                r#"a34kTMNs"#,
+                "a34kTMNs",
                 quote! { Value::new_symbol(m.clone(), "a34kTMNs") },
             ),
+            ("lambda", quote! { Value::new_symbol(m.clone(), "lambda") }),
             (
-                r#"lambda"#,
-                quote! { Value::new_symbol(m.clone(), "lambda") },
-            ),
-            (
-                r#"list->vector"#,
+                "list->vector",
                 quote! { Value::new_symbol(m.clone(), "list->vector") },
             ),
-            (r#"q"#, quote! { Value::new_symbol(m.clone(), "q") }),
-            (r#"V17a"#, quote! { Value::new_symbol(m.clone(), "V17a") }),
+            ("q", quote! { Value::new_symbol(m.clone(), "q") }),
+            ("V17a", quote! { Value::new_symbol(m.clone(), "V17a") }),
             (
-                r#"the-word-recursion-has-many-meanings"#,
+                "the-word-recursion-has-many-meanings",
                 quote! { Value::new_symbol(m.clone(), "the-word-recursion-has-many-meanings") },
             ),
-            (r#"||"#, quote! { Value::new_symbol(m.clone(), "") }),
+            ("||", quote! { Value::new_symbol(m.clone(), "") }),
             (
-                r#"|two words|"#,
+                "|two words|",
                 quote! { Value::new_symbol(m.clone(), "two words") },
             ),
             (
-                r#"|two\x20;words|"#,
+                r"|two\x20;words|",
                 quote! { Value::new_symbol(m.clone(), "two words") },
             ),
             (
-                r#"|two\twords|"#,
+                r"|two\twords|",
                 quote! { Value::new_symbol(m.clone(), "two\twords") },
             ),
         ];
@@ -104,14 +106,14 @@ mod tests {
             let pairs = SExpr::parse(Rule::datum, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
-                emit_symbol(syn::Ident::new("m", Span::call_site()), pair, &mut out).unwrap();
-                assert_eq!(out.to_string(), expected.to_string(), "expr value {}", i);
+                emit_symbol(&syn::Ident::new("m", Span::call_site()), pair, &mut out).unwrap();
+                assert_eq!(out.to_string(), expected.to_string(), "expr value {i}");
             }
         }
     }
@@ -125,16 +127,15 @@ mod tests {
             let pairs = SExpr::parse(Rule::datum, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
                 assert!(
-                    emit_symbol(syn::Ident::new("m", Span::call_site()), pair, &mut out).is_err(),
-                    "expr value {}",
-                    i
+                    emit_symbol(&syn::Ident::new("m", Span::call_site()), pair, &mut out).is_err(),
+                    "expr value {i}"
                 );
             }
         }

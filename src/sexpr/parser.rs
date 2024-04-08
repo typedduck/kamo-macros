@@ -1,9 +1,12 @@
+#![allow(clippy::pub_use)]
+
 use pest_derive::Parser;
 
 #[derive(Parser)]
 #[grammar = "sexpr/sexpr.pest"]
 pub struct SExpr;
 
+#[allow(clippy::panic)]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -13,24 +16,19 @@ mod tests {
 
     #[test]
     fn parse_atoms() {
-        for (i, (value, rule)) in ATOMS.iter().enumerate() {
+        for (i, &(value, rule)) in ATOMS.iter().enumerate() {
             let i = i + 1;
             let pairs = SExpr::parse(Rule::sexpr, value);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 if pair.as_rule() == Rule::EOI {
                     continue;
                 }
-                assert_eq!(pair.as_rule(), *rule, "atom value {}", i);
-                if i > 1000 {
-                    println!("Rule:    {:?}", pair.as_rule());
-                    println!("Tokens:  {:?}", pair.into_inner());
-                    println!();
-                }
+                assert_eq!(pair.as_rule(), rule, "atom value {i}");
             }
         }
     }
@@ -39,24 +37,19 @@ mod tests {
 
     #[test]
     fn parse_compounds() {
-        for (i, (input, rule)) in COMPOUNDS.iter().enumerate() {
+        for (i, &(input, rule)) in COMPOUNDS.iter().enumerate() {
             let i = i + 1;
             let pairs = SExpr::parse(Rule::sexpr, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 if pair.as_rule() == Rule::EOI {
                     continue;
                 }
-                assert_eq!(pair.as_rule(), *rule, "compound value {}", i);
-                if i > 1000 {
-                    println!("Rule:    {:?}", pair.as_rule());
-                    println!("Tokens:  {:?}", pair.into_inner());
-                    println!();
-                }
+                assert_eq!(pair.as_rule(), rule, "compound value {i}");
             }
         }
     }

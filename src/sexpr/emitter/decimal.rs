@@ -6,7 +6,8 @@ use crate::sexpr::{error::Error, parser::Rule};
 
 use super::Number;
 
-pub fn emit_decimal<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<Number, Error<'a>> {
+/// Emit a decimal value.
+pub fn emit_decimal<'a>(pair: &Pair<'a, Rule>, out: &mut TokenStream) -> Result<Number, Error<'a>> {
     if pair.as_rule() == Rule::decimal {
         if let Ok(value) = pair.as_str().parse::<i64>() {
             out.extend(quote! { Value::new_int(#value) });
@@ -14,11 +15,12 @@ pub fn emit_decimal<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<N
         } else if let Ok(value) = pair.as_str().parse::<f64>() {
             out.extend(quote! { Value::new_float(#value) });
             if value.is_infinite() {
-                return Ok(Number::Infinty);
+                Ok(Number::Infinty)
             } else if value.is_nan() {
-                return Ok(Number::NaN);
+                Ok(Number::NaN)
+            } else {
+                Ok(Number::Float(value))
             }
-            Ok(Number::Float(value))
         } else {
             Err(Error::InvalidDecimal(
                 pair.as_span(),
@@ -30,6 +32,7 @@ pub fn emit_decimal<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<N
     }
 }
 
+#[allow(clippy::unwrap_used, clippy::panic)]
 #[cfg(test)]
 mod tests {
     use pest::Parser;
@@ -59,14 +62,14 @@ mod tests {
             let pairs = SExpr::parse(Rule::decimal, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
-                emit_decimal(pair, &mut out).unwrap();
-                assert_eq!(out.to_string(), expected.to_string(), "expr value {}", i);
+                emit_decimal(&pair, &mut out).unwrap();
+                assert_eq!(out.to_string(), expected.to_string(), "expr value {i}");
             }
         }
     }
@@ -80,13 +83,13 @@ mod tests {
             let pairs = SExpr::parse(Rule::datum, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
-                assert!(emit_decimal(pair, &mut out).is_err(), "expr value {}", i);
+                assert!(emit_decimal(&pair, &mut out).is_err(), "expr value {i}");
             }
         }
     }

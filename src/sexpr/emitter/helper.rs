@@ -2,6 +2,12 @@ use pest::iterators::Pair;
 
 use crate::sexpr::{error::Error, parser::Rule};
 
+/// Get the escape character from a character code or mnemonic.
+#[allow(
+    clippy::unreachable,
+    clippy::wildcard_enum_match_arm,
+    clippy::expect_used
+)]
 pub fn get_escape(pair: Pair<'_, Rule>) -> Result<Option<char>, Error<'_>> {
     if matches!(pair.as_rule(), Rule::symbol_escape | Rule::string_escape) {
         let mut pairs = pair.into_inner();
@@ -38,7 +44,9 @@ pub fn get_escape(pair: Pair<'_, Rule>) -> Result<Option<char>, Error<'_>> {
             Rule::string_ilws => return Ok(None),
             _ => unreachable!(),
         };
-        assert!(pairs.next().is_none(), "too many inner pairs");
+        if pairs.next().is_some() {
+            return Err(Error::ExpectedEndOfExpression(pair.as_span()));
+        }
         Ok(Some(c))
     } else {
         Err(Error::ExpectedEscape(pair.as_span()))

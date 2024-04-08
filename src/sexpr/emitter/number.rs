@@ -10,16 +10,25 @@ use crate::sexpr::{
 
 use super::Number;
 
+/// Emit a number value.
+#[allow(
+    clippy::unreachable,
+    clippy::expect_used,
+    clippy::wildcard_enum_match_arm,
+    clippy::map_err_ignore
+)]
 pub fn emit_number<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<Number, Error<'a>> {
     if pair.as_rule() == Rule::number {
         // Descend into the number_*, decimal or infnan rules
         let mut pairs = pair.into_inner();
         let pair = pairs.next().expect("inner pair missing");
 
-        assert!(pairs.next().is_none(), "too many inner pairs");
+        if pairs.next().is_some() {
+            return Err(Error::ExpectedEndOfExpression(pair.as_span()));
+        }
         match pair.as_rule() {
-            Rule::decimal => return emit_decimal(pair, out),
-            Rule::infnan => return emit_infnan(pair, out),
+            Rule::decimal => return emit_decimal(&pair, out),
+            Rule::infnan => return emit_infnan(&pair, out),
             Rule::number_binary
             | Rule::number_decimal
             | Rule::number_hexdec
@@ -30,8 +39,8 @@ pub fn emit_number<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<Nu
 
                 let value =
                     match pair.as_rule() {
-                        Rule::decimal => return emit_decimal(pair, out),
-                        Rule::infnan => return emit_infnan(pair, out),
+                        Rule::decimal => return emit_decimal(&pair, out),
+                        Rule::infnan => return emit_infnan(&pair, out),
                         Rule::number_binary_digits => i64::from_str_radix(pair.as_str(), 2)
                             .map_err(|_| {
                                 Error::InvalidBinary(pair.as_span(), pair.as_str().to_owned())
@@ -48,7 +57,9 @@ pub fn emit_number<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<Nu
                     };
 
                 out.extend(quote! { Value::new_int(#value) });
-                assert!(pairs.next().is_none(), "too many inner pairs");
+                if pairs.next().is_some() {
+                    return Err(Error::ExpectedEndOfExpression(pair.as_span()));
+                }
                 Ok(Number::Integer(value))
             }
             _ => unreachable!(),
@@ -58,6 +69,7 @@ pub fn emit_number<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<Nu
     }
 }
 
+#[allow(clippy::unwrap_used, clippy::panic)]
 #[cfg(test)]
 mod tests {
     use pest::Parser;
@@ -101,14 +113,14 @@ mod tests {
             let pairs = SExpr::parse(Rule::datum, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
                 emit_number(pair, &mut out).unwrap();
-                assert_eq!(out.to_string(), expected.to_string(), "expr value {}", i);
+                assert_eq!(out.to_string(), expected.to_string(), "expr value {i}");
             }
         }
     }
@@ -122,13 +134,13 @@ mod tests {
             let pairs = SExpr::parse(Rule::datum, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
-                assert!(emit_number(pair, &mut out).is_err(), "expr value {}", i);
+                assert!(emit_number(pair, &mut out).is_err(), "expr value {i}");
             }
         }
     }

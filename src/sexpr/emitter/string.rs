@@ -6,8 +6,15 @@ use crate::sexpr::{error::Error, parser::Rule};
 
 use super::helper;
 
+/// Emit a string value.
+#[allow(
+    clippy::single_call_fn,
+    clippy::unreachable,
+    clippy::wildcard_enum_match_arm
+)]
+#[inline]
 pub fn emit_string<'a>(
-    mutator: syn::Ident,
+    mutator: &syn::Ident,
     pair: Pair<'a, Rule>,
     out: &mut TokenStream,
 ) -> Result<(), Error<'a>> {
@@ -29,7 +36,7 @@ pub fn emit_string<'a>(
                     Rule::string_text => string.push_str(pair.as_str()),
                     Rule::string_escape => {
                         if let Some(c) = helper::get_escape(pair)? {
-                            string.push(c)
+                            string.push(c);
                         }
                     }
                     _ => unreachable!(),
@@ -45,6 +52,7 @@ pub fn emit_string<'a>(
     }
 }
 
+#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
     use pest::Parser;
@@ -97,10 +105,10 @@ mod tests {
             ),
         ];
 
-        for (input, expected) in &exprs {
+        for (input, expected) in exprs {
             let pair = SExpr::parse(Rule::datum, input).unwrap().next().unwrap();
             let mut out = TokenStream::new();
-            emit_string(syn::Ident::new("m", Span::call_site()), pair, &mut out).unwrap();
+            emit_string(&syn::Ident::new("m", Span::call_site()), pair, &mut out).unwrap();
             assert_eq!(out.to_string(), expected.to_string());
         }
     }
@@ -112,7 +120,7 @@ mod tests {
         for input in &exprs {
             let pair = SExpr::parse(Rule::datum, input).unwrap().next().unwrap();
             let mut out = TokenStream::new();
-            assert!(emit_string(syn::Ident::new("m", Span::call_site()), pair, &mut out).is_err());
+            assert!(emit_string(&syn::Ident::new("m", Span::call_site()), pair, &mut out).is_err());
         }
     }
 }

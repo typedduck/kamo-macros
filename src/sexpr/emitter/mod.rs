@@ -1,4 +1,6 @@
-use std::fmt;
+#![allow(clippy::module_name_repetitions, clippy::pub_use)]
+
+use alloc::fmt;
 
 mod abbrev;
 pub use abbrev::emit_abbrev;
@@ -48,9 +50,9 @@ pub enum Number {
 
 impl fmt::Display for Number {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Integer(val) => write!(f, "{}", val),
-            Self::Float(val) => write!(f, "{}", val),
+        match *self {
+            Self::Integer(val) => write!(f, "{val}"),
+            Self::Float(val) => write!(f, "{val}"),
             Self::Infinty => write!(f, "infity"),
             Self::NaN => write!(f, "+NaN"),
         }

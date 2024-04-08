@@ -4,6 +4,14 @@ use quote::quote;
 
 use crate::sexpr::{error::Error, parser::Rule};
 
+/// Emit a character value.
+#[allow(
+    clippy::single_call_fn,
+    clippy::expect_used,
+    clippy::unreachable,
+    clippy::wildcard_enum_match_arm
+)]
+#[inline]
 pub fn emit_character<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<(), Error<'a>> {
     if pair.as_rule() == Rule::character {
         let mut pairs = pair.into_inner();
@@ -38,13 +46,16 @@ pub fn emit_character<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result
             }
             _ => unreachable!(),
         }
-        assert!(pairs.next().is_none(), "unexpected pair");
+        if pairs.next().is_some() {
+            return Err(Error::ExpectedEndOfExpression(pair.as_span()));
+        }
         Ok(())
     } else {
         Err(Error::ExpectedCharacter(pair.as_span()))
     }
 }
 
+#[allow(clippy::unwrap_used, clippy::panic)]
 #[cfg(test)]
 mod tests {
     use pest::Parser;
@@ -78,14 +89,14 @@ mod tests {
             let pairs = SExpr::parse(Rule::character, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
                 emit_character(pair, &mut out).unwrap();
-                assert_eq!(out.to_string(), expected.to_string(), "expr value {}", i);
+                assert_eq!(out.to_string(), expected.to_string(), "expr value {i}");
             }
         }
     }
@@ -99,13 +110,13 @@ mod tests {
             let pairs = SExpr::parse(Rule::datum, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
-                assert!(emit_character(pair, &mut out).is_err(), "expr value {}", i);
+                assert!(emit_character(pair, &mut out).is_err(), "expr value {i}");
             }
         }
     }

@@ -4,7 +4,10 @@ use quote::quote;
 
 use crate::sexpr::{error::Error, parser::Rule};
 
-pub fn emit_boolean<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<(), Error<'a>> {
+/// Emit a boolean value.
+#[allow(clippy::single_call_fn, clippy::unreachable)]
+#[inline]
+pub fn emit_boolean<'a>(pair: &Pair<'a, Rule>, out: &mut TokenStream) -> Result<(), Error<'a>> {
     if pair.as_rule() == Rule::boolean {
         match pair.as_str() {
             "#t" | "#true" => out.extend(quote! { Value::new_bool(true) }),
@@ -17,6 +20,7 @@ pub fn emit_boolean<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<(
     }
 }
 
+#[allow(clippy::unwrap_used, clippy::panic)]
 #[cfg(test)]
 mod tests {
     use pest::Parser;
@@ -38,14 +42,14 @@ mod tests {
             let pairs = SExpr::parse(Rule::boolean, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
-                emit_boolean(pair, &mut out).unwrap();
-                assert_eq!(out.to_string(), expected.to_string(), "expr value {}", i);
+                emit_boolean(&pair, &mut out).unwrap();
+                assert_eq!(out.to_string(), expected.to_string(), "expr value {i}");
             }
         }
     }
@@ -59,13 +63,13 @@ mod tests {
             let pairs = SExpr::parse(Rule::datum, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
-                assert!(emit_boolean(pair, &mut out).is_err(), "expr value {}", i);
+                assert!(emit_boolean(&pair, &mut out).is_err(), "expr value {i}");
             }
         }
     }

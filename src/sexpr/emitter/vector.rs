@@ -4,8 +4,11 @@ use quote::quote;
 
 use crate::sexpr::{emitter::emit_datum, error::Error, parser::Rule};
 
+/// Emit a vector.
+#[allow(clippy::single_call_fn)]
+#[inline]
 pub fn emit_vector<'a>(
-    mutator: syn::Ident,
+    mutator: &syn::Ident,
     pair: Pair<'a, Rule>,
     out: &mut TokenStream,
 ) -> Result<(), Error<'a>> {
@@ -15,10 +18,10 @@ pub fn emit_vector<'a>(
         if let Some(pair) = pairs.next() {
             let mut values = TokenStream::new();
 
-            emit_datum(Some(mutator.to_owned()), pair.to_owned(), &mut values)?;
+            emit_datum(Some(mutator.to_owned()), pair.clone(), &mut values)?;
             for pair in pairs {
                 values.extend(quote! {, });
-                emit_datum(Some(mutator.to_owned()), pair.to_owned(), &mut values)?;
+                emit_datum(Some(mutator.to_owned()), pair.clone(), &mut values)?;
             }
             out.extend(quote! { Value::new_vector(#mutator.clone(), vec![#values]) });
         } else {
@@ -30,6 +33,7 @@ pub fn emit_vector<'a>(
     }
 }
 
+#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
     use pest::Parser;
@@ -67,11 +71,11 @@ mod tests {
             ),
         ];
 
-        for (input, expected) in &exprs {
+        for (input, expected) in exprs {
             let pair = SExpr::parse(Rule::datum, input).unwrap().next().unwrap();
             let mut out = TokenStream::new();
 
-            emit_vector(syn::Ident::new("m", Span::call_site()), pair, &mut out).unwrap();
+            emit_vector(&syn::Ident::new("m", Span::call_site()), pair, &mut out).unwrap();
             assert_eq!(out.to_string(), expected.to_string());
         }
     }
@@ -83,7 +87,7 @@ mod tests {
             let pair = SExpr::parse(Rule::datum, input).unwrap().next().unwrap();
             let mut out = TokenStream::new();
 
-            assert!(emit_vector(syn::Ident::new("m", Span::call_site()), pair, &mut out).is_err());
+            assert!(emit_vector(&syn::Ident::new("m", Span::call_site()), pair, &mut out).is_err());
         }
     }
 }

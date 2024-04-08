@@ -1,11 +1,23 @@
+#![allow(
+    clippy::single_char_lifetime_names,
+    clippy::implicit_return,
+    clippy::question_mark_used,
+    clippy::shadow_unrelated,
+    clippy::shadow_reuse,
+    clippy::missing_docs_in_private_items,
+    clippy::missing_trait_methods,
+    clippy::min_ident_chars,
+    clippy::mod_module_files
+)]
+
 //! Macros for the `kamo` crate.
-//! 
+//!
 //! This crate is not meant to be used directly. It is used by the `kamo` crate
 //! to provide the `sexpr!`, `sexpr_file!`, and `sexpr_script!` macros.
-//! 
+//!
 //! The macros are used to parse a string literal into a single or an array of
 //! `kamo::value::Value`s. The macros are defined as follows:
-//! 
+//!
 //! - `sexpr!(<mutator>, <expression>)` - A macro for parsing a single
 //!   s-expression from a string. It returns a `kamo::value::Value`.
 //!
@@ -23,7 +35,7 @@
 //!  
 //! The syntax for the macros is as defined by the Scheme standard R7RS for the
 //! `read` procedure. The syntactic definition is the `<datum>` in section
-//! ["7.1.2 External representations"](https://standards.scheme.org/official/r7rs.pdf)
+//! [`7.1.2 External representations`](https://standards.scheme.org/official/r7rs.pdf)
 //! of the standard.
 //!  
 //! The syntax deviations from the standard are:
@@ -73,7 +85,7 @@
 //! assert_eq!(print(values[0].clone()).to_string(), "()");
 //! assert_eq!(print(values[1].clone()).to_string(), "100");
 //! assert_eq!(print(values[2].clone()).to_string(), "#t");
-//! 
+//!
 //! let values: &[Value] = &sexpr_file!("tests/sexpr/empty.scm");
 //! assert_eq!(values.len(), 0);
 //! ```
@@ -88,10 +100,12 @@
 //! assert_eq!(print(values[0].clone()).to_string(), "(define a 1)");
 //! assert_eq!(print(values[1].clone()).to_string(), "(define b 2)");
 //! assert_eq!(print(values[2].clone()).to_string(), "(+ a b)");
-//! 
+//!
 //! let values: &[Value] = &sexpr_script!("");
 //! assert_eq!(values.len(), 0);
 //! ```
+
+extern crate alloc;
 
 use proc_macro::TokenStream;
 
@@ -99,20 +113,20 @@ mod expand;
 mod sexpr;
 
 /// Parse a string of a single s-expression into a `kamo::value::Value`.
-/// 
+///
 /// The syntax is defined by the Scheme standard R7RS for the `read` procedure.
 /// For the deviations from the standard see the documentation of the `macros`
 /// crate.
-/// 
+///
 /// The macro takes an optional `MutatorRef` identifier. This is used to
 /// allocate values on the heap. If the expression does not contain any values
 /// that need to be allocated on the heap, then the `Mutator` identifier can be
 /// omitted.
-/// 
+///
 /// The syntax is `sexpr!(<mutator>, <expression>)`.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```ignore
 /// use kamo::{mem::Mutator, sexpr, value::{print, Value}};
 ///  
@@ -127,20 +141,20 @@ pub fn sexpr(input: TokenStream) -> TokenStream {
 }
 
 /// Parse a file of s-expressions into an array of `kamo::value::Value`s.
-/// 
+///
 /// The syntax is defined by the Scheme standard R7RS for the `read` procedure.
 /// For the deviations from the standard see the documentation of the `macros`
 /// crate.
-/// 
+///
 /// The macro takes an optional `MutatorRef` identifier. This is used to
 /// allocate values on the heap. If the expression does not contain any values
 /// that need to be allocated on the heap, then the `Mutator` identifier can be
 /// omitted.
-/// 
+///
 /// The syntax is `sexpr_file!(<mutator>, <filename>)`.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```ignore
 /// use kamo::{sexpr_file, value::{print, Value}};
 ///  
@@ -150,7 +164,7 @@ pub fn sexpr(input: TokenStream) -> TokenStream {
 /// assert_eq!(print(values[0].clone()).to_string(), "()");
 /// assert_eq!(print(values[1].clone()).to_string(), "100");
 /// assert_eq!(print(values[2].clone()).to_string(), "#t");
-/// 
+///
 /// let values: &[Value] = &sexpr_file!("tests/sexpr/empty.scm");
 /// assert_eq!(values.len(), 0);
 /// ```
@@ -160,20 +174,20 @@ pub fn sexpr_file(input: TokenStream) -> TokenStream {
 }
 
 /// Parse a string of s-expressions into an array of `kamo::value::Value`s.
-/// 
+///
 /// The syntax is defined by the Scheme standard R7RS for the `read` procedure.
 /// For the deviations from the standard see the documentation of the `macros`
 /// crate.
-/// 
+///
 /// The macro takes an optional `MutatorRef` identifier. This is used to
 /// allocate values on the heap. If the expression does not contain any values
 /// that need to be allocated on the heap, then the `Mutator` identifier can be
 /// omitted.
-/// 
+///
 /// The syntax is `sexpr_script!(<mutator>, <expressions>)`.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```ignore
 /// use kamo::{mem::Mutator, sexpr_script, value::{print, Value}};
 ///  
@@ -184,7 +198,7 @@ pub fn sexpr_file(input: TokenStream) -> TokenStream {
 /// assert_eq!(print(values[0].clone()).to_string(), "(define a 1)");
 /// assert_eq!(print(values[1].clone()).to_string(), "(define b 2)");
 /// assert_eq!(print(values[2].clone()).to_string(), "(+ a b)");
-/// 
+///
 /// let values: &[Value] = &sexpr_script!("");
 ///  
 /// assert_eq!(values.len(), 0);

@@ -1,9 +1,11 @@
+#![allow(clippy::std_instead_of_alloc)]
 use std::{error::Error as StdError, fmt};
 
 use pest::{error::Error as PestError, Span};
 
 use super::{emitter::Number, parser::Rule};
 
+#[allow(clippy::error_impl_error)]
 #[derive(Clone, PartialEq)]
 pub enum Error<'a> {
     Parser(String),
@@ -20,6 +22,7 @@ pub enum Error<'a> {
     ExpectedByteVector(Span<'a>),
     ExpectedCharacter(Span<'a>),
     ExpectedDecimal(Span<'a>),
+    ExpectedEndOfExpression(Span<'a>),
     ExpectedEndOfInput,
     ExpectedEndOfList(Span<'a>),
     ExpectedEscape(Span<'a>),
@@ -34,9 +37,10 @@ pub enum Error<'a> {
 impl<'a> StdError for Error<'a> {}
 
 impl<'a> fmt::Display for Error<'a> {
+    #[allow(clippy::too_many_lines, clippy::use_debug, clippy::ref_patterns)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Self::Parser(ref e) => write!(f, "{}", e),
+            Self::Parser(ref e) => write!(f, "{e}"),
             Self::EmptySExpr => write!(f, "empty s-expression"),
             Self::MutatorRequired(span) => {
                 write!(f, "{:?} mutator required", span.start_pos().line_col())
@@ -82,7 +86,11 @@ impl<'a> fmt::Display for Error<'a> {
                 )
             }
             Self::ExpectedAbbrev(span) => {
-                write!(f, "{:?} expected abbreviated list", span.start_pos().line_col())
+                write!(
+                    f,
+                    "{:?} expected abbreviated list",
+                    span.start_pos().line_col()
+                )
             }
             Self::ExpectedBoolean(span) => {
                 write!(f, "{:?} expected boolean", span.start_pos().line_col())
@@ -103,6 +111,13 @@ impl<'a> fmt::Display for Error<'a> {
             }
             Self::ExpectedDecimal(span) => {
                 write!(f, "{:?} expected decimal", span.start_pos().line_col())
+            }
+            Self::ExpectedEndOfExpression(span) => {
+                write!(
+                    f,
+                    "{:?} expected end of expression",
+                    span.start_pos().line_col()
+                )
             }
             Self::ExpectedEndOfInput => write!(f, "expected end of input"),
             Self::ExpectedEndOfList(span) => {

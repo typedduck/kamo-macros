@@ -6,9 +6,11 @@ use crate::sexpr::{error::Error, parser::Rule};
 
 use super::Number;
 
-pub fn emit_infnan<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<Number, Error<'a>> {
+/// Emit an infinite or NaN number.
+#[allow(clippy::unreachable)]
+pub fn emit_infnan<'a>(pair: &Pair<'a, Rule>, out: &mut TokenStream) -> Result<Number, Error<'a>> {
     if pair.as_rule() == Rule::infnan {
-        return match pair.as_str() {
+        match pair.as_str() {
             "+inf.0" => {
                 out.extend(quote! { Value::new_float(f64::INFINITY) });
                 Ok(Number::Infinty)
@@ -17,21 +19,18 @@ pub fn emit_infnan<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<Nu
                 out.extend(quote! { Value::new_float(f64::NEG_INFINITY) });
                 Ok(Number::Infinty)
             }
-            "+nan.0" => {
-                out.extend(quote! { Value::new_float(f64::NAN) });
-                Ok(Number::NaN)
-            }
-            "-nan.0" => {
+            "+nan.0" | "-nan.0" => {
                 out.extend(quote! { Value::new_float(f64::NAN) });
                 Ok(Number::NaN)
             }
             _ => unreachable!(),
-        };
+        }
     } else {
         Err(Error::ExpectedInfnan(pair.as_span()))
     }
 }
 
+#[allow(clippy::unwrap_used, clippy::panic)]
 #[cfg(test)]
 mod tests {
     use pest::Parser;
@@ -55,14 +54,14 @@ mod tests {
             let pairs = SExpr::parse(Rule::infnan, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
-                emit_infnan(pair, &mut out).unwrap();
-                assert_eq!(out.to_string(), expected.to_string(), "expr value {}", i);
+                emit_infnan(&pair, &mut out).unwrap();
+                assert_eq!(out.to_string(), expected.to_string(), "expr value {i}");
             }
         }
     }
@@ -76,13 +75,13 @@ mod tests {
             let pairs = SExpr::parse(Rule::datum, input);
             let pairs = match pairs {
                 Ok(pairs) => pairs,
-                Err(e) => panic!("unsuccessful parse {}: {}", i, e),
+                Err(e) => panic!("unsuccessful parse {i}: {e}"),
             };
 
             for pair in pairs {
                 let mut out = TokenStream::new();
 
-                assert!(emit_infnan(pair, &mut out).is_err(), "expr value {}", i);
+                assert!(emit_infnan(&pair, &mut out).is_err(), "expr value {i}");
             }
         }
     }

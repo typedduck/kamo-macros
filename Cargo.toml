@@ -13,13 +13,31 @@ description = "A macro for parsing s-expressions into kamo Values."
 categories = ["parser-implementations"]
 keywords = ["s-expression", "scheme", "lisp", "parser", "macros"]
 readme = "README.md"
-include = ["LICENSE-*", "README.md", "CHANGELOG.md", "Cargo.toml", "/src", "/tests"]
+include = [
+    "LICENSE-*",
+    "README.md",
+    "CHANGELOG.md",
+    "Cargo.toml",
+    "/src",
+    "/tests",
+]
 
 [profile.release]
 strip = "symbols"
 opt-level = 3
 lto = "fat"
 codegen-units = 1
+
+[lints.clippy]
+pedantic = "warn"
+# restriction = "warn"
+cargo = "warn"
+style = "warn"
+complexity = "warn"
+perf = "warn"
+correctness = "warn"
+suspicious = "warn"
+nursery = "warn"
 
 [lib]
 proc-macro = true

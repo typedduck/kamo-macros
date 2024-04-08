@@ -6,6 +6,9 @@ use crate::sexpr::{error::Error, parser::Rule};
 
 use super::emit_datum;
 
+/// Emit a list.
+#[allow(clippy::single_call_fn, clippy::expect_used)]
+#[inline]
 pub fn emit_list<'a>(
     mutator: Option<syn::Ident>,
     pair: Pair<'a, Rule>,
@@ -20,7 +23,7 @@ pub fn emit_list<'a>(
             let mut dot_value = None;
             let mut seen_dot = false;
 
-            emit_datum(Some(mutator.to_owned()), pair.to_owned(), &mut values)?;
+            emit_datum(Some(mutator.clone()), pair.clone(), &mut values)?;
             for pair in pairs {
                 if seen_dot {
                     return Err(Error::ExpectedEndOfList(pair.as_span()));
@@ -28,12 +31,12 @@ pub fn emit_list<'a>(
                     let pair = pair.into_inner().next().expect("dotted datum");
                     let mut value = TokenStream::new();
 
-                    emit_datum(Some(mutator.to_owned()), pair.to_owned(), &mut value)?;
+                    emit_datum(Some(mutator.clone()), pair.clone(), &mut value)?;
                     dot_value = Some(value);
                     seen_dot = true;
                 } else {
                     values.extend(quote! {, });
-                    emit_datum(Some(mutator.to_owned()), pair.to_owned(), &mut values)?;
+                    emit_datum(Some(mutator.clone()), pair.clone(), &mut values)?;
                 }
             }
             if let Some(dot_value) = dot_value {
@@ -50,6 +53,7 @@ pub fn emit_list<'a>(
     }
 }
 
+#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
     use pest::Parser;
@@ -105,7 +109,7 @@ mod tests {
             ),
         ];
 
-        for (input, expected) in &exprs {
+        for (input, expected) in exprs {
             let pair = SExpr::parse(Rule::datum, input).unwrap().next().unwrap();
             let mut out = TokenStream::new();
 

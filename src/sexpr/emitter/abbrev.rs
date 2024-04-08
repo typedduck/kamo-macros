@@ -4,8 +4,11 @@ use quote::quote;
 
 use crate::sexpr::{emitter::emit_datum, error::Error, parser::Rule};
 
+/// Emit an abbreviated datum.
+#[allow(clippy::single_call_fn, clippy::expect_used, clippy::unreachable)]
+#[inline]
 pub fn emit_abbrev<'a>(
-    mutator: syn::Ident,
+    mutator: &syn::Ident,
     pair: Pair<'a, Rule>,
     out: &mut TokenStream,
 ) -> Result<(), Error<'a>> {
@@ -36,6 +39,7 @@ pub fn emit_abbrev<'a>(
     }
 }
 
+#[allow(clippy::unwrap_used)]
 #[cfg(test)]
 mod tests {
     use pest::Parser;
@@ -78,11 +82,11 @@ mod tests {
             ),
         ];
 
-        for (input, expected) in &exprs {
+        for (input, expected) in exprs {
             let pair = SExpr::parse(Rule::datum, input).unwrap().next().unwrap();
             let mut out = TokenStream::new();
 
-            emit_abbrev(syn::Ident::new("m", Span::call_site()), pair, &mut out).unwrap();
+            emit_abbrev(&syn::Ident::new("m", Span::call_site()), pair, &mut out).unwrap();
             assert_eq!(out.to_string(), expected.to_string());
         }
     }
@@ -94,7 +98,7 @@ mod tests {
             let pair = SExpr::parse(Rule::datum, input).unwrap().next().unwrap();
             let mut out = TokenStream::new();
 
-            assert!(emit_abbrev(syn::Ident::new("m", Span::call_site()), pair, &mut out).is_err());
+            assert!(emit_abbrev(&syn::Ident::new("m", Span::call_site()), pair, &mut out).is_err());
         }
     }
 }

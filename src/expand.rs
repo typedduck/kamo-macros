@@ -1,7 +1,12 @@
+use std::fs::read_to_string;
+
 use pest::Parser;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::Token;
+use syn::{
+    parse::{Parse, ParseStream},
+    Token,
+};
 
 use crate::sexpr::{
     emitter::emit_datum,
@@ -9,6 +14,9 @@ use crate::sexpr::{
     parser::{Rule, SExpr},
 };
 
+/// Expands the `sexpr!` macro.
+#[allow(clippy::single_call_fn)]
+#[inline]
 pub fn sexpr(input: TokenStream) -> TokenStream {
     let sexpr = syn::parse2::<SExprMacro>(input);
     let sexpr = match sexpr {
@@ -46,6 +54,9 @@ pub fn sexpr(input: TokenStream) -> TokenStream {
     out
 }
 
+/// Expands the `sexpr_file!` macro.
+#[allow(clippy::single_call_fn, clippy::wildcard_enum_match_arm)]
+#[inline]
 pub fn sexpr_file(input: TokenStream) -> TokenStream {
     let sexpr = syn::parse2::<SExprMacro>(input);
     let sexpr = match sexpr {
@@ -53,7 +64,7 @@ pub fn sexpr_file(input: TokenStream) -> TokenStream {
         Err(err) => return err.to_compile_error(),
     };
     let input = sexpr.input.value();
-    let input = match std::fs::read_to_string(input) {
+    let input = match read_to_string(input) {
         Ok(input) => input,
         Err(err) => return syn::Error::new(sexpr.input.span(), err).to_compile_error(),
     };
@@ -69,18 +80,21 @@ pub fn sexpr_file(input: TokenStream) -> TokenStream {
             Rule::shadowed => continue,
             Rule::EOI => break,
             _ => {
-                let mut expr = TokenStream::new();
+                let mut datum = TokenStream::new();
 
-                if let Err(err) = emit_datum(sexpr.mutator.to_owned(), pair, &mut expr) {
+                if let Err(err) = emit_datum(sexpr.mutator.clone(), pair, &mut datum) {
                     return syn::Error::new(sexpr.input.span(), err).to_compile_error();
                 }
-                exprs.push(expr);
+                exprs.push(datum);
             }
         }
     }
     quote! { [#(#exprs),*] }
 }
 
+/// Expands the `sexpr_script!` macro.
+#[allow(clippy::single_call_fn, clippy::wildcard_enum_match_arm)]
+#[inline]
 pub fn sexpr_script(input: TokenStream) -> TokenStream {
     let sexpr = syn::parse2::<SExprMacro>(input);
     let sexpr = match sexpr {
@@ -100,12 +114,12 @@ pub fn sexpr_script(input: TokenStream) -> TokenStream {
             Rule::shadowed => continue,
             Rule::EOI => break,
             _ => {
-                let mut expr = TokenStream::new();
+                let mut datum = TokenStream::new();
 
-                if let Err(err) = emit_datum(sexpr.mutator.to_owned(), pair, &mut expr) {
+                if let Err(err) = emit_datum(sexpr.mutator.clone(), pair, &mut datum) {
                     return syn::Error::new(sexpr.input.span(), err).to_compile_error();
                 }
-                exprs.push(expr);
+                exprs.push(datum);
             }
         }
     }
@@ -117,8 +131,8 @@ struct SExprMacro {
     input: syn::LitStr,
 }
 
-impl syn::parse::Parse for SExprMacro {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+impl Parse for SExprMacro {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
         let mutator = if input.peek(syn::Ident) && input.peek2(Token![,]) {
             let mutator = Some(input.parse::<syn::Ident>()?);
 
@@ -169,15 +183,14 @@ mod tests {
             ),
         ];
 
-        for (i, (input, expected)) in sexprs.iter().enumerate() {
+        for (i, (input, expected)) in sexprs.iter().cloned().enumerate() {
             let i = i + 1;
-            let output = sexpr(input.clone());
+            let output = sexpr(input);
 
             assert_eq!(
                 output.to_string(),
                 expected.to_string(),
-                "sexpr #{} failed",
-                i
+                "sexpr #{i} failed"
             );
         }
     }
@@ -185,25 +198,21 @@ mod tests {
     #[test]
     fn sexpr_file_success() {
         let sexprs = [
-            (
-                quote! { m, "tests/sexpr/empty.scm" },
-                quote! { [] },
-            ),
+            (quote! { m, "tests/sexpr/empty.scm" }, quote! { [] }),
             (
                 quote! { m, "tests/sexpr/values.scm" },
                 quote! { [Value::new_nil(), Value::new_int(100i64), Value::new_bool(true)] },
             ),
         ];
 
-        for (i, (input, expected)) in sexprs.iter().enumerate() {
+        for (i, (input, expected)) in sexprs.iter().cloned().enumerate() {
             let i = i + 1;
-            let output = sexpr_file(input.clone());
+            let output = sexpr_file(input);
 
             assert_eq!(
                 output.to_string(),
                 expected.to_string(),
-                "sexpr_file #{} failed",
-                i
+                "sexpr_file #{i} failed"
             );
         }
     }
@@ -230,15 +239,14 @@ mod tests {
             ),
         ];
 
-        for (i, (input, expected)) in sexprs.iter().enumerate() {
+        for (i, (input, expected)) in sexprs.iter().cloned().enumerate() {
             let i = i + 1;
-            let output = sexpr_script(input.clone());
+            let output = sexpr_script(input);
 
             assert_eq!(
                 output.to_string(),
                 expected.to_string(),
-                "sexpr_script #{} failed",
-                i
+                "sexpr_script #{i} failed"
             );
         }
     }
