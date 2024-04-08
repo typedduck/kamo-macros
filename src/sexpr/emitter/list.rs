@@ -7,7 +7,7 @@ use crate::sexpr::{error::Error, parser::Rule};
 use super::emit_datum;
 
 /// Emit a list.
-#[allow(clippy::single_call_fn, clippy::expect_used)]
+#[allow(clippy::single_call_fn, clippy::unwrap_used)]
 #[inline]
 pub fn emit_list<'a>(
     mutator: Option<syn::Ident>,
@@ -28,7 +28,7 @@ pub fn emit_list<'a>(
                 if seen_dot {
                     return Err(Error::ExpectedEndOfList(pair.as_span()));
                 } else if pair.as_rule() == Rule::dotted {
-                    let pair = pair.into_inner().next().expect("dotted datum");
+                    let pair = pair.into_inner().next().unwrap();
                     let mut value = TokenStream::new();
 
                     emit_datum(Some(mutator.clone()), pair.clone(), &mut value)?;

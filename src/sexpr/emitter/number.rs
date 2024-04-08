@@ -13,7 +13,7 @@ use super::Number;
 /// Emit a number value.
 #[allow(
     clippy::unreachable,
-    clippy::expect_used,
+    clippy::unwrap_used,
     clippy::wildcard_enum_match_arm,
     clippy::map_err_ignore
 )]
@@ -21,7 +21,7 @@ pub fn emit_number<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<Nu
     if pair.as_rule() == Rule::number {
         // Descend into the number_*, decimal or infnan rules
         let mut pairs = pair.into_inner();
-        let pair = pairs.next().expect("inner pair missing");
+        let pair = pairs.next().unwrap();
 
         if pairs.next().is_some() {
             return Err(Error::ExpectedEndOfExpression(pair.as_span()));
@@ -35,7 +35,7 @@ pub fn emit_number<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<Nu
             | Rule::number_octal => {
                 // Descend into the number_*_digits, decimal or infnan rules
                 let mut pairs = pair.into_inner();
-                let pair = pairs.next().expect("inner pair missing");
+                let pair = pairs.next().unwrap();
 
                 let value =
                     match pair.as_rule() {

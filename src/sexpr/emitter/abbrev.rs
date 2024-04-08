@@ -5,7 +5,7 @@ use quote::quote;
 use crate::sexpr::{emitter::emit_datum, error::Error, parser::Rule};
 
 /// Emit an abbreviated datum.
-#[allow(clippy::single_call_fn, clippy::expect_used, clippy::unreachable)]
+#[allow(clippy::single_call_fn, clippy::unwrap_used, clippy::unreachable)]
 #[inline]
 pub fn emit_abbrev<'a>(
     mutator: &syn::Ident,
@@ -14,7 +14,7 @@ pub fn emit_abbrev<'a>(
 ) -> Result<(), Error<'a>> {
     if pair.as_rule() == Rule::abbrev {
         let mut pairs = pair.into_inner();
-        let abbrev = pairs.next().expect("abbreviation prefix");
+        let abbrev = pairs.next().unwrap();
         let mut datum = TokenStream::new();
         let abbrev = match abbrev.as_str() {
             "'" => syn::LitStr::new("quote", Span::call_site()),
@@ -24,11 +24,7 @@ pub fn emit_abbrev<'a>(
             _ => unreachable!("unimplemented abbreviation: {:?}", abbrev.as_str()),
         };
 
-        emit_datum(
-            Some(mutator.to_owned()),
-            pairs.next().expect("abbreviation datum"),
-            &mut datum,
-        )?;
+        emit_datum(Some(mutator.to_owned()), pairs.next().unwrap(), &mut datum)?;
         out.extend(quote! {
             Value::new_list(#mutator.clone(),
                 vec![Value::new_symbol(#mutator.clone(), #abbrev), #datum])

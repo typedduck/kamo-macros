@@ -7,7 +7,7 @@ use crate::sexpr::{emitter::helper, error::Error, parser::Rule};
 /// Emit a symbol value.
 #[allow(
     clippy::single_call_fn,
-    clippy::expect_used,
+    clippy::unwrap_used,
     clippy::unreachable,
     clippy::wildcard_enum_match_arm
 )]
@@ -33,7 +33,7 @@ pub fn emit_symbol<'a>(
                 match pair.as_rule() {
                     Rule::symbol_text => symbol.push_str(pair.as_str()),
                     Rule::symbol_escape => {
-                        symbol.push(helper::get_escape(pair)?.expect("escaped character"));
+                        symbol.push(helper::get_escape(pair)?.unwrap());
                     }
                     _ => unreachable!(),
                 }

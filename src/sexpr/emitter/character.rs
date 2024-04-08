@@ -7,7 +7,7 @@ use crate::sexpr::{error::Error, parser::Rule};
 /// Emit a character value.
 #[allow(
     clippy::single_call_fn,
-    clippy::expect_used,
+    clippy::unwrap_used,
     clippy::unreachable,
     clippy::wildcard_enum_match_arm
 )]
@@ -15,11 +15,11 @@ use crate::sexpr::{error::Error, parser::Rule};
 pub fn emit_character<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result<(), Error<'a>> {
     if pair.as_rule() == Rule::character {
         let mut pairs = pair.into_inner();
-        let pair = pairs.next().expect("inner pair missing");
+        let pair = pairs.next().unwrap();
 
         match pair.as_rule() {
             Rule::character_any => {
-                let c = pair.as_str().chars().next().expect("character missing");
+                let c = pair.as_str().chars().next().unwrap();
                 out.extend(quote! { Value::new_char(#c) });
             }
             Rule::character_name => {
@@ -39,7 +39,7 @@ pub fn emit_character<'a>(pair: Pair<'a, Rule>, out: &mut TokenStream) -> Result
             }
             Rule::character_code => {
                 let code = pair.as_str();
-                let code = u32::from_str_radix(code, 16).expect("invalid character code");
+                let code = u32::from_str_radix(code, 16).unwrap();
                 let c = char::from_u32(code)
                     .ok_or_else(|| Error::InvalidCodePoint(pair.as_span(), code))?;
                 out.extend(quote! { Value::new_char(#c) });
