@@ -21,8 +21,8 @@ pub fn emit_string<'a>(
     if pair.as_rule() == Rule::string {
         let string = pair.as_str();
 
-        if string.is_empty() {
-            out.extend(quote! { Value::new_string("") });
+        if string.is_empty() || string == r#""""# {
+            out.extend(quote! { Value::new_string(#mutator.clone(), "") });
             return Ok(());
         }
 
