@@ -1,6 +1,7 @@
 # Kamo-macros
 
-![Build Status](https://img.shields.io/github/actions/workflow/status/typedduck/kamo-macros/rust.yml)
+**Note**: This repsoitory has been archived. The contents has been merge with the [kamo](https://github.com/typedduck/kamo) repsitory.
+
 [![Crates.io](https://img.shields.io/crates/v/kamo-macros)](https://crates.io/crates/kamo-macros)
 [![Crates.io](https://img.shields.io/crates/d/kamo-macros)](https://crates.io/crates/kamo-macros)
 
